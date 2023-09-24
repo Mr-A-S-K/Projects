@@ -12,4 +12,4 @@ if birthday_date == date1:
     print(bday.birthday_messages)
 else:
     print(days_until_birthday)
-    print(bday.birthday_messages)
+    
