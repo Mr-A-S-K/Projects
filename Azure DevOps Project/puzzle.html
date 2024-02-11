@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game of 15</title>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+
+        td {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #000;
+            text-align: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        td.empty {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Game of 15</h1>
+    <table>
+        <tbody id="game-board">
+        </tbody>
+    </table>
+    <p>Moves: <span id="move-counter">0</span></p>
+    <p>Time: <span id="timer">0</span> seconds</p>
+    <button id="new-game-button">New Game</button>
+    <button id="simple-game-button">Simple Game</button>
+
+    <script>
+        const boardSize = 4;
+        let emptyTile = { row: boardSize - 1, col: boardSize - 1 };
+        let moveCounter = 0;
+        let timer = 0;
+        let timerInterval;
+
+        function createTile(value) {
+            const tile = document.createElement('td');
+            tile.textContent = value;
+            return tile;
+        }
+
+        function initializeGame() {
+            const board = document.getElementById('game-board');
+            for (let i = 0; i < boardSize; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < boardSize; j++) {
+                    const value = i * boardSize + j + 1;
+                    const tile = createTile(value);
+                    tile.addEventListener('click', () => moveTile(i, j));
+                    row.appendChild(tile);
+                }
+                board.appendChild(row);
+            }
+
+            // Remove the last tile (empty space)
+            const emptyCell = board.rows[emptyTile.row].cells[emptyTile.col];
+            emptyCell.textContent = '';
+            emptyCell.classList.add('empty');
+
+            // Add event listeners to buttons
+            document.getElementById('new-game-button').addEventListener('click', newGame);
+            document.getElementById('simple-game-button').addEventListener('click', startSimpleGame);
+
+            // Start the timer
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function moveTile(row, col) {
+            if (isAdjacent(row, col, emptyTile.row, emptyTile.col)) {
+                const board = document.getElementById('game-board');
+                const clickedTile = board.rows[row].cells[col];
+
+                // Swap the clicked tile with the empty tile
+                const emptyCell = board.rows[emptyTile.row].cells[emptyTile.col];
+                emptyCell.textContent = clickedTile.textContent;
+                emptyCell.classList.remove('empty');
+                clickedTile.textContent = '';
+                clickedTile.classList.add('empty');
+
+                // Update the empty tile coordinates
+                emptyTile.row = row;
+                emptyTile.col = col;
+
+                moveCounter++;
+                document.getElementById('move-counter').textContent = moveCounter;
+
+                if (isSolved()) {
+                    clearInterval(timerInterval);
+                    alert('Congratulations! You solved the puzzle in ' + moveCounter + ' moves and ' + timer + ' seconds.');
+                }
+            }
+        }
+
+        function isAdjacent(row1, col1, row2, col2) {
+            const rowDiff = Math.abs(row1 - row2);
+            const colDiff = Math.abs(col1 - col2);
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+
+        function isSolved() {
+            const board = document.getElementById('game-board');
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const cell = board.rows[i].cells[j];
+                    const value = cell.textContent;
+                    if (value !== '' && parseInt(value) !== i * boardSize + j + 1) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function updateTimer() {
+            timer++;
+            document.getElementById('timer').textContent = timer;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function newGame() {
+            clearInterval(timerInterval);
+            timer = 0;
+            moveCounter = 0;
+            document.getElementById('move-counter').textContent = moveCounter;
+            document.getElementById('timer').textContent = timer;
+            newGame(true);
+        }
+
+        function startSimpleGame() {
+            clearInterval(timerInterval);
+            timer = 0;
+            moveCounter = 0;
+            document.getElementById('move-counter').textContent = moveCounter;
+            document.getElementById('timer').textContent = timer;
+            startGame(true);
+        }
+
+	function newGame(simple = false) {
+	    clearInterval(timerInterval);
+            const board = document.getElementById('game-board');
+            board.innerHTML = ''; // Clear the current board
+
+            let numbers = Array.from({ length: boardSize * boardSize }, (_, i) => i + 1);
+
+            if (simple) {
+                shuffleArray(numbers);
+                while (!isSolvable(numbers)) {
+                    shuffleArray(numbers);
+                }
+            } else {
+                do {
+                    shuffleArray(numbers);
+                } while (!isSolvable(numbers));
+            }
+
+            for (let i = 0; i < boardSize; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < boardSize; j++) {
+                    const value = numbers[i * boardSize + j];
+                    const tile = createTile(value);
+                    tile.addEventListener('click', () => moveTile(i, j));
+                    row.appendChild(tile);
+                    if (value === boardSize * boardSize) {
+                        emptyTile.row = i;
+                        emptyTile.col = j;
+                        tile.textContent = '';
+                        tile.classList.add('empty');
+                    }
+                }
+                board.appendChild(row);
+            }
+	    timer = 0;
+	    document.getElementById('timer').textContent = timer;
+
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+
+        function startGame() {
+    const board = document.getElementById('game-board');
+    board.innerHTML = ''; // Clear the current board
+
+    let numbers = Array.from({ length: boardSize * boardSize }, (_, i) => i + 1);
+    numbers[boardSize * boardSize - 1] = boardSize * boardSize - 1; // Set the last tile as the second to last value
+    numbers[boardSize * boardSize - 2] = boardSize * boardSize; // Set the second to last tile as the last value
+
+    for (let i = 0; i < boardSize; i++) {
+        const row = document.createElement('tr');
+        for (let j = 0; j < boardSize; j++) {
+            const value = numbers[i * boardSize + j];
+            const tile = createTile(value);
+            tile.addEventListener('click', () => moveTile(i, j));
+            row.appendChild(tile);
+            if (value === boardSize * boardSize) {
+                emptyTile.row = i;
+                emptyTile.col = j;
+                tile.textContent = '';
+                tile.classList.add('empty');
+            }
+        }
+        board.appendChild(row);
+    }
+
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+
+        function isSolvable(puzzle) {
+            let inversions = 0;
+            for (let i = 0; i < puzzle.length; i++) {
+                for (let j = i + 1; j < puzzle.length; j++) {
+                    if (puzzle[i] > puzzle[j] && puzzle[i] !== puzzle.length && puzzle[j] !== puzzle.length) {
+                        inversions++;
+                    }
+                }
+            }
+            const emptyRowFromBottom = boardSize - emptyTile.row;
+            return (inversions % 2 === 0) === (emptyRowFromBottom % 2 === 1);
+        }
+
+        window.onload = initializeGame;
+    </script>
+</body>
+</html>
